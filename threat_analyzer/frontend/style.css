@@ -1,16 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+body {
+  background-color: #060911;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.glass-panel {
+  background: rgba(14, 22, 41, 0.78);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(56, 189, 248, 0.12);
+}
+
+.glow-red {
+  box-shadow: 0 0 25px -4px rgba(239, 68, 68, 0.35);
+}
+
+.glow-amber {
+  box-shadow: 0 0 25px -4px rgba(245, 158, 11, 0.35);
+}
+
+.glow-green {
+  box-shadow: 0 0 25px -4px rgba(16, 185, 129, 0.35);
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #0a0f1d;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #233458;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #38bdf8;
+}
+
+.print-only {
+  display: none;
+}
+
+/* ==========================================================
+   Print Security Audit Styling Subsystem
+   ========================================================== */
+@media print {
+  @page {
+    margin: 12mm 15mm;
+    size: A4 portrait;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Suppress interactive, screen-only UI components */
+  .no-print,
+  header,
+  #dropZone,
+  #scanProgressCard,
+  #helpModal,
+  #toast,
+  .tab-btn {
+    display: none !important;
+  }
+
+  /* Display formal print audit letterhead */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Force ALL audit tabs visible in the generated document */
+  .tab-content {
+    display: block !important;
+    margin-top: 1.5rem !important;
+    page-break-inside: auto;
+  }
+
+  /* Convert dark cards into high-contrast clean borders on paper */
+  .glass-panel,
+  #verdictBanner,
+  .permission-item,
+  #threatsCardsContainer > div,
+  #apiCallsContainer > div {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    color: #0f172a !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  h1, h2, h3, h4, strong, span, p, td, th {
+    color: #0f172a !important;
+  }
+
+  .text-slate-400,
+  .text-slate-500,
+  .font-mono-code {
+    color: #334155 !important;
+  }
+
+  /* High-contrast paper badge conversions */
+  .bg-red-500\/20, .bg-red-950\/70, .bg-red-950\/80 {
+    background-color: #fee2e2 !important;
+    color: #991b1b !important;
+    border: 1px solid #f87171 !important;
+  }
+
+  .bg-amber-500\/20, .bg-amber-950\/70, .bg-amber-950\/80 {
+    background-color: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fbbf24 !important;
+  }
+
+  .bg-cyan-950\/70, .bg-cyan-950\/80, .bg-blue-500\/20 {
+    background-color: #e0f2fe !important;
+    color: #0369a1 !important;
+    border: 1px solid #7dd3fc !important;
+  }
+
+  /* Uncap max-height to display entire table listings without scrollbars */
+  #permissionsContainer,
+  #networkStringsContainer,
+  .bg-cyber-900 {
+    max-height: none !important;
+    overflow: visible !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+  }
 }

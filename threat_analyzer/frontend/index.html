@@ -1,92 +1,493 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DroidGuard - APK Malware Threat Intelligence</title>
-  <!-- Tailwind CSS CDN for reactive utility styles -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+  <title>DroidGuard // APK Threat Intelligence & Malware Scanner</title>
 
-  
-  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <i class="fa-solid fa-shield-halved text-emerald-400 text-2xl"></i>
-      <div>
-        <h1 class="text-xl font-bold tracking-tight">DroidGuard <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">API Edition</span></h1>
-        <p class="text-xs text-slate-400">Heuristic APK Static Analyzer & Threat Classifier</p>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              950: '#060911',
+              900: '#0a0f1d',
+              850: '#0e1629',
+              800: '#141f38',
+              700: '#1e2d4f',
+              border: '#1f2e4d',
+              accent: '#06b6d4',
+              red: '#ef4444',
+              amber: '#f59e0b',
+              emerald: '#10b981'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'monospace'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- JSZip for In-Memory APK Dissection -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Project Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="min-h-screen flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
+
+  <!-- Interactive Header -->
+  <header class="border-b border-cyber-border bg-cyber-900/90 sticky top-0 z-50 backdrop-blur-md no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-indigo-600 flex items-center justify-center p-0.5 shadow-lg shadow-cyan-500/20">
+          <div class="w-full h-full bg-cyber-950 rounded-[10px] flex items-center justify-center">
+            <i class="fa-solid fa-shield-virus text-cyan-400 text-lg"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold tracking-wider text-base sm:text-lg bg-gradient-to-r from-white via-cyan-200 to-cyan-400 bg-clip-text text-transparent font-mono-code">DROIDGUARD</span>
+            <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">Binary Engine v4.0</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">AXML UTF-16LE / Multi-DEX Heuristic Malware Threat Analyzer</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <div class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-cyber-850 border border-cyber-border text-xs font-mono-code">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-300">IN-MEMORY ENGINE: ARMED</span>
+        </div>
+        <button id="helpModalBtn" class="p-2 rounded-lg bg-cyber-850 text-slate-300 hover:text-cyan-400 border border-cyber-border hover:border-cyan-500/50 transition">
+          <i class="fa-solid fa-circle-question text-base"></i>
+        </button>
       </div>
     </div>
   </header>
 
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-  <main class="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-6">
+    <!-- Upload & Quick Presets Section -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch no-print">
+      
+      <!-- Upload Drop Zone (8 Cols) -->
+      <div class="lg:col-span-8 flex flex-col">
+        <div id="dropZone" class="group relative flex-1 min-h-[300px] border-2 border-dashed border-slate-700 hover:border-cyan-400 rounded-2xl bg-cyber-850/80 transition-all duration-300 p-6 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden">
+          <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
 
-    <!-- Interactive Drop Zone -->
-    <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-900/30 flex flex-col items-center justify-center gap-3">
-      <input type="file" id="fileInput" accept=".apk" class="hidden" />
-      <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400"></i>
-      <h3 class="text-lg font-semibold">Drag & Drop your Android APK here, or <span class="text-emerald-400 underline">Browse</span></h3>
-      <p class="text-xs text-slate-500">Supports Android packages (.apk) up to 150MB</p>
-    </div>
+          <div class="relative z-10 flex flex-col items-center">
+            <div class="w-16 h-16 mb-4 rounded-2xl bg-cyber-800 border border-slate-700 group-hover:border-cyan-500/60 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300 shadow-md">
+              <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-slate-200 group-hover:text-cyan-300 transition-colors">
+              Drop Android APK Package Here to Analyze
+            </h3>
+            <p class="text-sm text-slate-400 max-w-md mt-1 mb-4">
+              Direct binary inspection: Decodes binary <code class="text-cyan-300 font-mono-code text-xs">AndroidManifest.xml</code> string pools, scans <code class="text-cyan-300 font-mono-code text-xs">classes*.dex</code> bytecode, and evaluates security risks.
+            </p>
 
-    <!-- Loading Spinner (Shown during active backend analysis) -->
-    <div id="loader" class="hidden flex items-center justify-center gap-3 p-4 bg-slate-900 border border-slate-800 rounded-lg">
-      <i class="fa-solid fa-circle-notch fa-spin text-emerald-400 text-xl"></i>
-      <span class="text-sm font-medium">Decompressing and inspecting binary manifests & Dalvik bytecode...</span>
-    </div>
+            <div class="flex items-center space-x-3">
+              <label for="apkFileInput" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-medium text-xs sm:text-sm tracking-wide shadow-lg shadow-cyan-600/25 transition cursor-pointer flex items-center space-x-2">
+                <i class="fa-solid fa-file-shield"></i>
+                <span>Choose .APK File</span>
+              </label>
+              <input type="file" id="apkFileInput" accept=".apk" class="hidden" />
+            </div>
+          </div>
 
-    <div id="resultsDashboard" class="hidden flex flex-col gap-6">
-
-      <!-- Sub-section A: Summary Verdict & File Details Banner -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/80 border border-slate-800 p-6 rounded-xl">
-        <!-- Score Display Column -->
-        <div class="flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-800">
-          <span class="text-xs font-semibold text-slate-400 tracking-wider">RISK SCORE</span>
-          <div id="scoreDisplay" class="text-5xl font-extrabold my-2 text-emerald-400">0</div>
-          <span id="verdictBadge" class="px-3 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-emerald-950 text-emerald-400 border border-emerald-800">SAFE</span>
-        </div>
-
-        <!-- Metadata Column -->
-        <div class="col-span-2 flex flex-col justify-center gap-2">
-          <h2 id="fileNameDisplay" class="text-lg font-bold text-slate-100 truncate">Application.apk</h2>
-          <div class="text-xs text-slate-400 font-mono space-y-1">
-            <p>SHA-256: <span id="sha256Display" class="text-slate-300 select-all"></span></p>
-            <p>Size: <span id="fileSizeDisplay" class="text-slate-300"></span></p>
+          <div class="mt-4 text-[11px] text-slate-500 flex items-center space-x-3 font-mono-code z-10">
+            <span><i class="fa-solid fa-circle-check text-emerald-400 mr-1"></i> AXML & Multi-DEX Ready</span>
+            <span>•</span>
+            <span><i class="fa-solid fa-lock text-cyan-400 mr-1"></i> 100% Client-Side Private</span>
           </div>
         </div>
       </div>
 
-      <!-- Sub-section B: Categorized Threat Cards Container -->
-      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-xl">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-base font-semibold flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Detected Threat Indicators & Attack Types
-          </h3>
-          <span id="threatCountBadge" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">0 Threats</span>
+      <!-- Quick Preset Samples (4 Cols) -->
+      <div class="lg:col-span-4 glass-panel rounded-2xl p-6 flex flex-col justify-between border-slate-800">
+        <div>
+          <div class="flex items-center justify-between pb-3 border-b border-cyber-border mb-4">
+            <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center">
+              <i class="fa-solid fa-flask-vial text-cyan-400 mr-2"></i> Verified Threat Presets
+            </h4>
+            <span class="text-[10px] font-mono-code text-slate-400 bg-cyber-900 px-2 py-0.5 rounded">Quick Test</span>
+          </div>
+          <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+            Test the threat detection and scoring matrix instantly using simulated real-world signatures:
+          </p>
+
+          <div class="space-y-2.5">
+            <button id="presetSpyNote" class="w-full text-left p-3 rounded-xl bg-cyber-900/90 hover:bg-cyber-800 border border-red-500/20 hover:border-red-500/60 transition group flex items-start space-x-3">
+              <div class="p-2 rounded-lg bg-red-950/60 text-red-400 border border-red-800/40 group-hover:scale-105 transition-transform mt-0.5">
+                <i class="fa-solid fa-skull-crossbones text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-200 group-hover:text-red-300">SpyNote.Trojan.RAT</span>
+                  <span class="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-semibold">Score: 92</span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate mt-0.5">Accessibility abuse, DexClassLoader, SMS 2FA interception</p>
+              </div>
+            </button>
+
+            <button id="presetAdware" class="w-full text-left p-3 rounded-xl bg-cyber-900/90 hover:bg-cyber-800 border border-amber-500/20 hover:border-amber-500/60 transition group flex items-start space-x-3">
+              <div class="p-2 rounded-lg bg-amber-950/60 text-amber-400 border border-amber-800/40 group-hover:scale-105 transition-transform mt-0.5">
+                <i class="fa-solid fa-triangle-exclamation text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-200 group-hover:text-amber-300">MobiAd.Aggressive.Utility</span>
+                  <span class="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-semibold">Score: 54</span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate mt-0.5">Overlay tapjacking, boot startup, intrusive telemetry</p>
+              </div>
+            </button>
+
+            <button id="presetSignal" class="w-full text-left p-3 rounded-xl bg-cyber-900/90 hover:bg-cyber-800 border border-emerald-500/20 hover:border-emerald-500/60 transition group flex items-start space-x-3">
+              <div class="p-2 rounded-lg bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 group-hover:scale-105 transition-transform mt-0.5">
+                <i class="fa-solid fa-shield-halved text-sm"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-200 group-hover:text-emerald-300">SecureChat.Messenger</span>
+                  <span class="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-semibold">Score: 12</span>
+                </div>
+                <p class="text-[11px] text-slate-400 truncate mt-0.5">Hardened manifest, verified signing key, clean DEX calls</p>
+              </div>
+            </button>
+          </div>
         </div>
-        <div id="threatList" class="space-y-3">
-          <!-- Dynamic Threat Cards Injected Here by app.js -->
+
+        <div class="mt-4 pt-3 border-t border-cyber-border text-[11px] text-slate-500 font-mono-code flex justify-between items-center">
+          <span>YARA/Heuristic: Static v4.0</span>
+          <span class="text-cyan-400 font-semibold">Zero-Leakage</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scan Progress Card -->
+    <div id="scanProgressCard" class="hidden glass-panel rounded-2xl p-6 border border-cyan-500/30 no-print">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 rounded-lg bg-cyan-950 flex items-center justify-center text-cyan-400 animate-spin">
+            <i class="fa-solid fa-circle-notch"></i>
+          </div>
+          <div>
+            <h4 id="scanStatusTitle" class="text-sm font-semibold text-slate-200">Decompressing APK & Reading Byte Pools...</h4>
+            <p id="scanStatusDetail" class="text-xs text-slate-400 font-mono-code">Scanning classes*.dex and decoding UTF-16LE / ASCII tokens</p>
+          </div>
+        </div>
+        <span id="scanPercent" class="text-sm font-mono-code font-bold text-cyan-400">0%</span>
+      </div>
+      <div class="w-full bg-cyber-900 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700">
+        <div id="scanProgressBar" class="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Printable Formal Audit Document Header (Appears only on print / PDF export) -->
+    <div class="print-only mb-6 pb-4 border-b-2 border-slate-900">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">DROIDGUARD SECURITY AUDIT REPORT</h1>
+          <p class="text-xs text-slate-600 font-mono-code mt-0.5">Automated Static Analysis & Dalvik Bytecode Inspection</p>
+        </div>
+        <div class="text-right text-xs font-mono-code text-slate-600">
+          <div>Engine: <span class="font-bold">v4.0 In-Memory</span></div>
+          <div>Audit Timestamp: <span id="printAuditDate" class="font-bold"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Dashboard -->
+    <div id="resultsDashboard" class="hidden space-y-6">
+
+      <!-- Threat Verdict Hero Banner -->
+      <div id="verdictBanner" class="rounded-2xl p-6 border transition-all duration-500 relative overflow-hidden">
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          
+          <!-- Score Gauge (Col 4) -->
+          <div class="md:col-span-4 flex items-center space-x-6 justify-center md:justify-start">
+            <div class="relative w-32 h-32 flex items-center justify-center shrink-0">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" class="stroke-slate-800" stroke-width="10" fill="transparent" />
+                <circle id="scoreProgressCircle" cx="60" cy="60" r="50" class="stroke-cyan-500 transition-all duration-1000 ease-out" stroke-width="10" stroke-linecap="round" fill="transparent" stroke-dasharray="314.15" stroke-dashoffset="314.15" />
+              </svg>
+              <div class="absolute flex flex-col items-center justify-center text-center">
+                <span id="scoreValue" class="text-3xl font-extrabold font-mono-code text-white">0</span>
+                <span class="text-[9px] tracking-widest uppercase font-mono-code text-slate-400">Risk Score</span>
+              </div>
+            </div>
+
+            <div>
+              <div id="classificationBadge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold font-mono-code uppercase tracking-wider mb-2">
+                ANALYZING
+              </div>
+              <h2 id="verdictTitle" class="text-xl font-bold text-white tracking-tight">Pending Scan</h2>
+              <p id="verdictSub" class="text-xs text-slate-400 mt-0.5">Heuristic Confidence: High</p>
+            </div>
+          </div>
+
+          <!-- Risk Drivers Breakdown (Col 5) -->
+          <div class="md:col-span-5 border-t md:border-t-0 md:border-l border-slate-800/80 pt-4 md:pt-0 md:pl-6 space-y-2">
+            <div class="text-xs uppercase font-mono-code tracking-wider text-slate-400 flex items-center">
+              <i class="fa-solid fa-bullseye text-cyan-400 mr-2"></i> Primary Detection Drivers
+            </div>
+            <ul id="riskDriversList" class="space-y-1.5 text-xs text-slate-300">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- Actions Column (Col 3) -->
+          <div class="md:col-span-3 flex flex-col space-y-2 justify-center border-t md:border-t-0 md:border-l border-slate-800/80 pt-4 md:pt-0 md:pl-6 no-print">
+            <button id="exportJsonBtn" class="w-full px-4 py-2.5 rounded-xl bg-cyber-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center space-x-2 border border-slate-700 transition">
+              <i class="fa-solid fa-download text-cyan-400"></i>
+              <span>Export JSON Report</span>
+            </button>
+            <button id="printAuditBtn" class="w-full px-4 py-2.5 rounded-xl bg-cyber-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center space-x-2 border border-slate-700 transition">
+              <i class="fa-solid fa-print text-purple-400"></i>
+              <span>Print Security Audit</span>
+            </button>
+            <div id="actionRecommendation" class="text-[11px] font-mono-code text-center py-1 px-2 rounded mt-1 bg-cyber-900/80 text-slate-400">
+              Recommendation: Evaluating...
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Sub-section C: Extracted Permissions Container -->
-      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-xl">
-        <h3 class="text-base font-semibold mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-key text-blue-400"></i> Declared Permissions
-        </h3>
-        <div id="permissionsList" class="flex flex-wrap gap-2">
-          <!-- Dynamic Permission Pills Injected Here by app.js -->
+      <!-- Navigation Tabs (Screen only) -->
+      <div class="flex items-center space-x-2 border-b border-cyber-border overflow-x-auto pb-1 no-print">
+        <button id="tabBtn-threats" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-t-lg transition flex items-center space-x-2 text-cyan-400 border-b-2 border-cyan-400 bg-cyber-800/40">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Identified Threat Types</span>
+          <span id="threatsCountBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-red-950 text-red-300 border border-red-800/60">0</span>
+        </button>
+        <button id="tabBtn-permissions" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-t-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-key"></i>
+          <span>Permissions Audit</span>
+          <span id="permCountBadge" class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-cyber-900 text-slate-300">0</span>
+        </button>
+        <button id="tabBtn-overview" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-t-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-fingerprint"></i>
+          <span>Package Hashes & Meta</span>
+        </button>
+        <button id="tabBtn-behavior" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-t-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-code"></i>
+          <span>DEX Bytecode & Sensitive APIs</span>
+        </button>
+        <button id="tabBtn-files" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-t-lg transition flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-folder-tree"></i>
+          <span>File Hierarchy</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Identified Threats -->
+      <div id="tabContent-threats" class="tab-content space-y-4">
+        <div class="glass-panel rounded-2xl p-5">
+          <div class="flex items-center justify-between pb-3 border-b border-cyber-border mb-4">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                <i class="fa-solid fa-shield-halved text-cyan-400 mr-2"></i> Detected Threat Types & Risk Classifications
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Specific behavioral attack vectors identified from parsed AndroidManifest.xml and DEX bytecode strings.</p>
+            </div>
+            <span id="totalThreatsTag" class="text-xs font-mono-code px-2.5 py-1 rounded bg-cyber-900 text-slate-300">
+              0 Threats
+            </span>
+          </div>
+          <div id="threatsCardsContainer" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Permissions Audit -->
+      <div id="tabContent-permissions" class="tab-content hidden space-y-4">
+        <div class="glass-panel rounded-2xl p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cyber-border">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                <i class="fa-solid fa-shield-cat text-cyan-400 mr-2"></i> Android Permissions Audit
+              </h3>
+              <p class="text-xs text-slate-400 mt-0.5">Permissions extracted directly from binary <code class="text-cyan-300 font-mono-code">AndroidManifest.xml</code> string pools.</p>
+            </div>
+            <div class="relative w-full sm:w-64 no-print">
+              <input type="text" id="permissionFilterInput" placeholder="Filter permissions..." class="w-full bg-cyber-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-400 pl-8" />
+              <i class="fa-solid fa-magnifying-glass text-slate-500 absolute left-2.5 top-2.5 text-xs"></i>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-3 my-4 text-xs font-mono-code">
+            <span class="px-2.5 py-1 rounded-md bg-red-950/70 border border-red-800/40 text-red-400" id="critPermCount">0 Critical</span>
+            <span class="px-2.5 py-1 rounded-md bg-amber-950/70 border border-amber-800/40 text-amber-400" id="highPermCount">0 Dangerous</span>
+            <span class="px-2.5 py-1 rounded-md bg-cyan-950/70 border border-cyan-800/40 text-cyan-400" id="normPermCount">0 Standard</span>
+          </div>
+
+          <div id="permissionsContainer" class="space-y-2 max-h-[500px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Package Metadata & Hashes -->
+      <div id="tabContent-overview" class="tab-content hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+              <i class="fa-solid fa-mobile-screen-button text-cyan-400 mr-2"></i> Package Metadata
+            </h3>
+            <div class="space-y-3 text-xs">
+              <div class="flex justify-between items-center py-2 border-b border-cyber-border">
+                <span class="text-slate-400">File Name</span>
+                <span id="metaFileName" class="font-mono-code text-cyan-300 font-semibold select-all">app.apk</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-cyber-border">
+                <span class="text-slate-400">Archive Size</span>
+                <span id="metaFileSize" class="font-mono-code text-slate-300">0 MB</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-cyber-border">
+                <span class="text-slate-400">Detected Package / Namespace</span>
+                <span id="metaPackageName" class="font-mono-code text-slate-300 select-all">com.example.app</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-cyber-border">
+                <span class="text-slate-400">Total Unpacked Entries</span>
+                <span id="metaEntryCount" class="font-mono-code text-slate-300">0 items</span>
+              </div>
+              <div class="flex justify-between items-center py-2">
+                <span class="text-slate-400">Signature Certificate</span>
+                <span id="metaCertStatus" class="font-mono-code text-emerald-400">Checking...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+              <i class="fa-solid fa-hashtag text-purple-400 mr-2"></i> Cryptographic Hashes (WebCrypto)
+            </h3>
+            <div class="space-y-3 text-xs">
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>SHA-256 Digest</span>
+                  <button class="copy-btn text-cyan-400 hover:text-cyan-300 text-[10px] font-mono-code no-print" data-copy-target="metaSha256">COPY</button>
+                </div>
+                <div id="metaSha256" class="p-2.5 rounded-lg bg-cyber-900 border border-cyber-border font-mono-code text-slate-300 break-all select-all text-[11px]">
+                  Calculating...
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>SHA-1 Digest</span>
+                  <button class="copy-btn text-cyan-400 hover:text-cyan-300 text-[10px] font-mono-code no-print" data-copy-target="metaSha1">COPY</button>
+                </div>
+                <div id="metaSha1" class="p-2.5 rounded-lg bg-cyber-900 border border-cyber-border font-mono-code text-slate-300 break-all select-all text-[11px]">
+                  Calculating...
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-slate-400 mb-1">
+                  <span>MD5 (Checksum)</span>
+                  <button class="copy-btn text-cyan-400 hover:text-cyan-300 text-[10px] font-mono-code no-print" data-copy-target="metaMd5">COPY</button>
+                </div>
+                <div id="metaMd5" class="p-2.5 rounded-lg bg-cyber-900 border border-cyber-border font-mono-code text-slate-300 break-all select-all text-[11px]">
+                  Calculating...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Bytecode Behaviors & APIs -->
+      <div id="tabContent-behavior" class="tab-content hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="glass-panel rounded-2xl p-5 space-y-4 lg:col-span-2">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center justify-between">
+              <span class="flex items-center"><i class="fa-solid fa-code text-cyan-400 mr-2"></i> DEX String Signatures & Sensitive API References</span>
+              <span class="text-xs font-mono-code text-slate-400">Multi-DEX</span>
+            </h3>
+            <div id="apiCallsContainer" class="space-y-3"></div>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+              <i class="fa-solid fa-network-wired text-amber-400 mr-2"></i> Discovered Network Endpoints
+            </h3>
+            <p class="text-xs text-slate-400">Hardcoded IP literals and URLs identified in bytecode strings.</p>
+            <div id="networkStringsContainer" class="space-y-2 max-h-[460px] overflow-y-auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Unpacked File Hierarchy -->
+      <div id="tabContent-files" class="tab-content hidden space-y-4">
+        <div class="glass-panel rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-cyber-border">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                <i class="fa-solid fa-folder-tree text-cyan-400 mr-2"></i> Unpacked Archive File Table
+              </h3>
+              <p class="text-xs text-slate-400">Live enumeration of ZIP entries parsed directly from the APK.</p>
+            </div>
+            <span id="fileExplorerCount" class="text-xs font-mono-code text-cyan-400">0 items</span>
+          </div>
+
+          <div class="bg-cyber-900 rounded-xl p-3 max-h-[500px] overflow-y-auto border border-cyber-border font-mono-code text-xs">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="text-slate-500 border-b border-slate-800 pb-2">
+                  <th class="py-1">Entry Path</th>
+                  <th class="py-1 text-right">Uncompressed</th>
+                  <th class="py-1 text-right">Format</th>
+                </tr>
+              </thead>
+              <tbody id="fileExplorerTableBody" class="divide-y divide-slate-800/60"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
     </div>
   </main>
 
+  <!-- Help & Methodology Modal -->
+  <div id="helpModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+    <div class="glass-panel max-w-xl w-full rounded-2xl p-6 border-slate-700 space-y-4 relative">
+      <button id="closeHelpModalBtn" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+      <h3 class="text-lg font-bold text-white flex items-center">
+        <i class="fa-solid fa-shield-virus text-cyan-400 mr-2"></i> DroidGuard Binary Inspection Methodology
+      </h3>
+      <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
+        <p>Android APKs contain compiled Android Binary XML (<code class="text-cyan-300 font-mono-code">AndroidManifest.xml</code>) and Dalvik bytecode (<code class="text-cyan-300 font-mono-code">classes*.dex</code>). Plain text readers fail because characters are encoded in binary UTF-16LE and ASCII string pools with intervening null bytes.</p>
+        <p>DroidGuard utilizes an in-memory byte-stream parser that sweeps across memory chunks to rebuild valid tokens, matching declared permissions and sensitive API calls directly inside your browser.</p>
+        <div class="p-3 bg-cyber-900 rounded-xl space-y-1.5 border border-cyber-border">
+          <div class="font-semibold text-slate-200">Threat Scoring Thresholds:</div>
+          <div><strong class="text-emerald-400">0 - 29 (SAFE):</strong> Normal production permissions, clean API footprint.</div>
+          <div><strong class="text-amber-400">30 - 64 (SUSPICIOUS):</strong> Screen overlay, boot startup triggers, aggressive adware markers.</div>
+          <div><strong class="text-red-400">65 - 100 (MALICIOUS):</strong> Accessibility service hijack, Dynamic Dex loading, SMS interception, root exploits.</div>
+        </div>
+      </div>
+      <div class="pt-2 flex justify-end">
+        <button id="closeHelpModalBtn2" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none glass-panel px-4 py-3 rounded-xl border flex items-center space-x-3 text-xs shadow-xl no-print">
+    <i id="toastIcon" class="fa-solid fa-circle-info text-cyan-400"></i>
+    <span id="toastMsg" class="text-slate-200">Notification</span>
+  </div>
+
+  <!-- Application Logic -->
   <script src="app.js"></script>
 </body>
 </html>
