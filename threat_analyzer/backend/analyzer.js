@@ -260,6 +260,12 @@ export async function parseAndAnalyzeApk(fileBuffer) {
   if (finalScore >= 70) verdict = 'Malicious';
   else if (finalScore >= 40) verdict = 'Suspicious';
 
+  //Step 4.10: Return structured report object for frontend rendering
+  const report = 
+
+  // Step 4.10.1: Metadata
+
+
   // Return formatted report object
   return {
     meta: {
