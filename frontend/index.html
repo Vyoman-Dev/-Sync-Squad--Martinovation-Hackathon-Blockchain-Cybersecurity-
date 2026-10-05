@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DroidGuard - APK Malware Threat Intelligence</title>
+  <!-- Tailwind CSS CDN for reactive utility styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <i class="fa-solid fa-shield-halved text-emerald-400 text-2xl"></i>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">DroidGuard <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">API Edition</span></h1>
+        <p class="text-xs text-slate-400">Heuristic APK Static Analyzer & Threat Classifier</p>
+      </div>
+    </div>
+  </header>
+
+
+  <main class="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-6">
+
+    <!-- Interactive Drop Zone -->
+    <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-8 text-center cursor-pointer transition bg-slate-900/30 flex flex-col items-center justify-center gap-3">
+      <input type="file" id="fileInput" accept=".apk" class="hidden" />
+      <i class="fa-solid fa-cloud-arrow-up text-4xl text-slate-400"></i>
+      <h3 class="text-lg font-semibold">Drag & Drop your Android APK here, or <span class="text-emerald-400 underline">Browse</span></h3>
+      <p class="text-xs text-slate-500">Supports Android packages (.apk) up to 150MB</p>
+    </div>
+
+    <!-- Loading Spinner (Shown during active backend analysis) -->
+    <div id="loader" class="hidden flex items-center justify-center gap-3 p-4 bg-slate-900 border border-slate-800 rounded-lg">
+      <i class="fa-solid fa-circle-notch fa-spin text-emerald-400 text-xl"></i>
+      <span class="text-sm font-medium">Decompressing and inspecting binary manifests & Dalvik bytecode...</span>
+    </div>
+
+    <div id="resultsDashboard" class="hidden flex flex-col gap-6">
+
+      <!-- Sub-section A: Summary Verdict & File Details Banner -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/80 border border-slate-800 p-6 rounded-xl">
+        <!-- Score Display Column -->
+        <div class="flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-800">
+          <span class="text-xs font-semibold text-slate-400 tracking-wider">RISK SCORE</span>
+          <div id="scoreDisplay" class="text-5xl font-extrabold my-2 text-emerald-400">0</div>
+          <span id="verdictBadge" class="px-3 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-emerald-950 text-emerald-400 border border-emerald-800">SAFE</span>
+        </div>
+
+        <!-- Metadata Column -->
+        <div class="col-span-2 flex flex-col justify-center gap-2">
+          <h2 id="fileNameDisplay" class="text-lg font-bold text-slate-100 truncate">Application.apk</h2>
+          <div class="text-xs text-slate-400 font-mono space-y-1">
+            <p>SHA-256: <span id="sha256Display" class="text-slate-300 select-all"></span></p>
+            <p>Size: <span id="fileSizeDisplay" class="text-slate-300"></span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-section B: Categorized Threat Cards Container -->
+      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-base font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Detected Threat Indicators & Attack Types
+          </h3>
+          <span id="threatCountBadge" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">0 Threats</span>
+        </div>
+        <div id="threatList" class="space-y-3">
+          <!-- Dynamic Threat Cards Injected Here by app.js -->
+        </div>
+      </div>
+
+      <!-- Sub-section C: Extracted Permissions Container -->
+      <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-xl">
+        <h3 class="text-base font-semibold mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-key text-blue-400"></i> Declared Permissions
+        </h3>
+        <div id="permissionsList" class="flex flex-wrap gap-2">
+          <!-- Dynamic Permission Pills Injected Here by app.js -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

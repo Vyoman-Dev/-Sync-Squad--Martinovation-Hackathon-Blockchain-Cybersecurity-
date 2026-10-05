@@ -133,3 +133,145 @@ const THREAT_RULES = {
     }
   ]
 };
+
+function extractStringsFromBuffer(buffer) {
+  const extracted = [];
+  let currentAscii = '';
+  let currentUtf16 = '';
+
+  for (let i = 0; i < buffer.length; i++) {
+    const b = buffer[i];
+
+    // Branch A: Standard 7-bit printable ASCII characters (range 32..126)
+    if (b >= 32 && b <= 126) {
+      currentAscii += String.fromCharCode(b);
+    } else {
+      if (currentAscii.length >= 4) extracted.push(currentAscii);
+      currentAscii = '';
+    }
+
+    // Branch B: UTF-16LE encoding (common in compiled Android binary XML pools)
+    // Checks if current byte is printable and followed by a null high byte
+    if (i + 1 < buffer.length && buffer[i + 1] === 0 && b >= 32 && b <= 126) {
+      currentUtf16 += String.fromCharCode(b);
+      i++; // Skip the high-order null byte
+    } else {
+      if (currentUtf16.length >= 4) extracted.push(currentUtf16);
+      currentUtf16 = '';
+    }
+  }
+
+  return extracted;
+}
+export async function parseAndAnalyzeApk(fileBuffer) {
+  // Step 4.1: Compute unique cryptographic fingerprints
+  const sha256 = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+  const md5 = crypto.createHash('md5').update(fileBuffer).digest('hex');
+
+  // Step 4.2: Load APK archive into memory via JSZip
+  const zip = await JSZip.loadAsync(fileBuffer);
+  let rawStrings = [];
+  const extractedPermissions = new Set();
+  const detectedThreats = [];
+  let riskScore = 0;
+
+  // Step 4.3: Extract and inspect AndroidManifest.xml string tables
+  const manifestFile = zip.file('AndroidManifest.xml');
+  if (manifestFile) {
+    const manifestBuffer = await manifestFile.async('nodebuffer');
+    const strings = extractStringsFromBuffer(manifestBuffer);
+    rawStrings = rawStrings.concat(strings);
+
+    // Identify standard Android permission identifiers
+    for (const str of strings) {
+      const match = str.match(/android\.permission\.([A-Z_]+)/);
+      if (match) extractedPermissions.add(match[1]);
+    }
+  }
+
+  // Step 4.4: Loop through all DEX bytecode files (Multi-DEX support)
+  const dexFiles = zip.file(/classes\d*\.dex/);
+  for (const dexEntry of dexFiles) {
+    const dexBuffer = await dexEntry.async('nodebuffer');
+    const dexStrings = extractStringsFromBuffer(dexBuffer);
+    rawStrings = rawStrings.concat(dexStrings);
+  }
+
+  const combinedDEXStrings = rawStrings.join('\n');
+
+  // Step 4.5: Score critical permissions against detection catalog
+  for (const p of THREAT_RULES.permissions.critical) {
+    if (extractedPermissions.has(p.id)) {
+      detectedThreats.push({
+        severity: 'Critical',
+        title: p.name,
+        category: p.category,
+        scoreImpact: p.score,
+        detail: p.detail
+      });
+      riskScore += p.score;
+    }
+  }
+
+  // Step 4.6: Score dangerous permissions against detection catalog
+  for (const p of THREAT_RULES.permissions.dangerous) {
+    if (extractedPermissions.has(p.id)) {
+      detectedThreats.push({
+        severity: 'Dangerous',
+        title: p.name,
+        category: p.category,
+        scoreImpact: p.score,
+        detail: p.detail
+      });
+      riskScore += p.score;
+    }
+  }
+
+  // Step 4.7: Evaluate Dalvik bytecode string patterns
+  for (const rule of THREAT_RULES.bytecode) {
+    if (rule.pattern.test(combinedDEXStrings)) {
+      detectedThreats.push({
+        severity: 'High',
+        title: rule.name,
+        category: rule.category,
+        scoreImpact: rule.score,
+        detail: rule.detail
+      });
+      riskScore += rule.score;
+    }
+  }
+
+  // Step 4.8: Verify APK signing integrity in META-INF/
+  const certFiles = zip.file(/^META-INF\/.*\.(RSA|DSA|EC)$/i);
+  if (certFiles.length === 0) {
+    detectedThreats.push({
+      severity: 'High',
+      title: 'Missing or Unsigned Certificate',
+      category: 'Package Tampering',
+      scoreImpact: 20,
+      detail: 'The APK lacks a standard cryptographic signature in META-INF/.'
+    });
+    riskScore += 20;
+  }
+
+  // Step 4.9: Normalize final score (0..100 range) and assign classification
+  const finalScore = Math.min(100, Math.max(0, riskScore));
+  let verdict = 'Safe';
+  if (finalScore >= 70) verdict = 'Malicious';
+  else if (finalScore >= 40) verdict = 'Suspicious';
+
+  // Return formatted report object
+  return {
+    meta: {
+      sha256,
+      md5,
+      totalDexFiles: dexFiles.length,
+      manifestFound: !!manifestFile
+    },
+    riskScore: finalScore,
+    verdict,
+    permissions: Array.from(extractedPermissions),
+    threats: detectedThreats
+  };
+}
+
